@@ -7,6 +7,8 @@
 
 namespace Badoo\LiveProfiler;
 
+use JsonException;
+
 class DataPacker implements DataPackerInterface
 {
     /**
@@ -15,7 +17,17 @@ class DataPacker implements DataPackerInterface
      */
     public function pack(array $data)
     {
-        return json_encode($this->utf8ize($data));
+        $decode = $this->utf8ize($data);
+
+        try {
+            $result = json_encode($decode, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            $tmp = $e;
+
+            return '';
+        }
+
+        return $result;
     }
 
     /**
@@ -34,7 +46,8 @@ class DataPacker implements DataPackerInterface
     {
         if (is_array($mixed)) {
             foreach ($mixed as $key => $value) {
-                $mixed[$key] = $this->utf8ize($value);
+                unset($mixed[$key]);
+                $mixed[$this->utf8ize($key)] = $this->utf8ize($value);
             }
         } elseif (is_string($mixed)) {
             return mb_convert_encoding($mixed, "UTF-8", "UTF-8");
